@@ -17,35 +17,52 @@ db.init_app(app)
 api = Api(app)
 
 
-class Plants(Resource):
-
-    def get(self):
-        plants = [plant.to_dict() for plant in Plant.query.all()]
-        return make_response(jsonify(plants), 200)
-
-    def post(self):
-        data = request.get_json()
-
-        new_plant = Plant(
-            name=data['name'],
-            image=data['image'],
-            price=data['price'],
-        )
-
-        db.session.add(new_plant)
-        db.session.commit()
-
-        return make_response(new_plant.to_dict(), 201)
-
-
-api.add_resource(Plants, '/plants')
-
-
 class PlantByID(Resource):
 
     def get(self, id):
-        plant = Plant.query.filter_by(id=id).first().to_dict()
-        return make_response(jsonify(plant), 200)
+        plant = db.session.get(Plant, id)
+        if not plant:
+            return make_response(jsonify({'error': 'Plant not found'}), 404)
+        return make_response(jsonify(plant.to_dict()), 200)
+
+    def put(self, id):
+        plant = db.session.get(Plant, id)
+        if not plant:
+            return make_response(jsonify({'error': 'Plant not found'}), 404)
+
+        data = request.get_json()
+        if 'is_in_stock' in data:
+            plant.is_in_stock = data['is_in_stock']
+
+        db.session.commit()
+
+        return make_response(plant.to_dict(), 200)
+
+    def patch(self, id):
+        plant = db.session.get(Plant, id)
+        if not plant:
+            return make_response(jsonify({'error': 'Plant not found'}), 404)
+
+        data = request.get_json()
+        if 'is_in_stock' in data:
+            plant.is_in_stock = data['is_in_stock']
+
+        db.session.commit()
+
+        return make_response(plant.to_dict(), 200)
+
+    def delete(self, id):
+        plant = db.session.get(Plant, id)
+        if not plant:
+            return make_response(jsonify({'error': 'Plant not found'}), 404)
+
+        db.session.delete(plant)
+        db.session.commit()
+
+        return '', 204
+
+
+
 
 
 api.add_resource(PlantByID, '/plants/<int:id>')
